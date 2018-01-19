@@ -5,12 +5,23 @@ library(caret)
 #grouping function
 group <- function(dataset, k){
   # K-Means Cluster Analysis
-  fit <- kmeans(dataset, 2, algorithm="MacQueen") # 5 cluster solution
+  fit <- kmeans(dataset, 2, algorithm="MacQueen") # k cluster solution
   # get cluster means
   aggregate(dataset, by=list(fit$cluster),FUN=mean)
   # append cluster assignment
   grouped <- data.frame(dataset, fit$cluster)
   return(fit$cluster)
+}
+
+dist_group <- function(dataset, k, dist_method, clust_method){
+  # Ward Hierarchical Clustering
+  d <- dist(dataset, method = dist_method) # distance matrix
+  fit <- hclust(d, method=clust_method) 
+  plot(fit) # display dendogram
+  groups <- cutree(fit, k=k) # cut tree into 5 clusters
+  # draw dendogram with red borders around the 5 clusters 
+  rect.hclust(fit, k=k, border="red")  
+  return(groups)
 }
 
 # matematyka
@@ -39,11 +50,14 @@ selected_fatures <- d3[,c("Dalc", "Walc")]# , "absences.y")]
 #selected_fatures <- d2[,c("Dalc", "Walc")] #, "absences")]
 selected_fatures <- na.omit(selected_fatures) # listwise deletion of missing
 #selected_fatures <- scale(selected_fatures) # standardize variables]
-
-grouped <- data.frame(selected_fatures, group_id=group(selected_fatures, 2))
-png(file = "grouping.png", width = 8, height = 8, units = 'in', res = 400)
-plot(grouped$Dalc, grouped$Walc, col=grouped$group_id)
-dev.off()
+for (dist_methode in c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")){
+  for(clust_method in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
+    grouped <- data.frame(selected_fatures, group_id=dist_group(selected_fatures, 2, dist_methode, clust_method))#group_id=group(selected_fatures, 2))
+    png(file = paste("img/",clust_method,"_",dist_methode,"_grouping.png"), width = 8, height = 8, units = 'in', res = 400)
+    plot(grouped$Dalc, grouped$Walc, col=grouped$group_id)
+    dev.off()
+  }
+}
 #library(rgl)
 #plot3d(mydata$Dalc, mydata$Walc, mydata$absences, col=mydata$fit.cluster)
 
