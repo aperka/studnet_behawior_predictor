@@ -13,14 +13,14 @@ group <- function(dataset, k){
   return(fit$cluster)
 }
 
-dist_group <- function(dataset, k, dist_method, clust_method){
+dist_group <- function(dataset, k, dist_method, clust_method, save_path){
   # Ward Hierarchical Clustering
   d <- dist(dataset, method = dist_method) # distance matrix
   fit <- hclust(d, method=clust_method)
-  png(file = paste("grouping_plots/dendograms/",clust_method,"_",dist_method,".png", sep=""), width = 8, height = 8, units = 'in', res = 400)
+  png(file = paste(save_path ,clust_method,"_",dist_method,".png", sep=""), width = 80, height = 8, units = 'in', res = 2000)
   plot(fit) # display dendogram
-  groups <- cutree(fit, k=k) # cut tree into 5 clusters
-  # draw dendogram with red borders around the 5 clusters 
+  groups <- cutree(fit, k=k) # cut tree into k clusters
+  # draw dendogram with red borders around the k clusters 
   rect.hclust(fit, k=k, border="red")
   dev.off()
   return(groups)
@@ -39,28 +39,43 @@ d3$Walc = pmax(d3$Walc_Mat,d3$Walc_Por)
 d3$Walc_Mat = NULL
 d3$Walc_Por = NULL
 
-png(file = "histograms/dalc_hist.png", width = 8, height = 8, units = 'in', res = 400)
-hist(d3$Dalc, breaks=c(1,2,3,4,5), col="blue")
-dev.off()
+for (subject in c("mat", "por")){
+  d3 = read.table(paste("datasets/student-",subject ,".csv", sep=""), sep=",",header=TRUE)
+  
+  png(file = paste(subject,"/histograms/dalc_hist.png", sep=""), width = 8, height = 8, units = 'in', res = 400)
+  hist(d3$Dalc, breaks=c(1,2,3,4,5), col="blue")
+  dev.off()
+  
+  png(file =paste(subject,"/histograms/walc_hist.png", sep=""), width = 8, height = 8, units = 'in', res = 400)
+  hist(d3$Walc, breaks=c(1,2,3,4,5), col="blue")
+  dev.off()
+  
+  # selecting fatures
+  selected_fatures <- d3[,c("Dalc", "Walc")]# , "absences.y")]
+  selected_fatures <- na.omit(selected_fatures) # listwise deletion of missing
+  
+  for (dist_methode in c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")){
+    for(clust_method in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
+      groupng_dendograms = paste(subject, "/grouping_plots/dendograms/",sep="")
+      grouped <- data.frame(selected_fatures, group_id=dist_group(selected_fatures, 2, dist_methode, clust_method, groupng_dendograms))
+      write.csv(grouped, file = paste(subject,"/csv/",clust_method,"_",dist_methode,".csv", sep=""))
+      png(file = paste(subject,"/grouping_plots/grouping/",clust_method,"_",dist_methode,".png", sep=""), width = 16, height = 8, units = 'in', res = 400)
 
-png(file = "histograms/walc_hist.png", width = 8, height = 8, units = 'in', res = 400)
-hist(d3$Walc, breaks=c(1,2,3,4,5), col="blue")
-dev.off()
-
-# selecting fatures
-selected_fatures <- d3[,c("Dalc", "Walc")]# , "absences.y")]
-#selected_fatures <- d2[,c("Dalc", "Walc")] #, "absences")]
-selected_fatures <- na.omit(selected_fatures) # listwise deletion of missing
-#selected_fatures <- scale(selected_fatures) # standardize variables]
-for (dist_methode in c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")){
-  for(clust_method in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
-    grouped <- data.frame(selected_fatures, group_id=dist_group(selected_fatures, 2, dist_methode, clust_method))#group_id=group(selected_fatures, 2))
-    write.csv(grouped, file = paste("csv/",clust_method,"_",dist_methode,".csv", sep=""))
-    png(file = paste("grouping_plots/grouping/",clust_method,"_",dist_methode,".png", sep=""), width = 8, height = 8, units = 'in', res = 400)
-    plot(grouped$Dalc, grouped$Walc, col=grouped$group_id)
-    dev.off()
+      par(mfrow=c(1,2), oma=c(0,0,2,0))
+      plot(grouped$Dalc, grouped$Walc, col=grouped$group_id, pch=grouped$group_id)
+      hist(grouped$group_id, breaks=c(0,1,2), col=c("gray", "red"))
+      title(paste("Dist methode:", dist_methode, "\nHclust methode:", clust_method), outer=TRUE)
+      #plot(grouped$Dalc, grouped$Walc, col=grouped$group_id+1, pch=grouped$group_id)
+      dev.off()
+      png(file = paste(subject,"/grouping_plots/histograms/",clust_method,"_",dist_methode,".png", sep=""), width = 8, height = 8, units = 'in', res = 400)
+      hist(grouped$group_id, breaks=c(0,1,2), col=grouped$group_id)
+      dev.off()
+    }
   }
 }
+
+
+
 #library(rgl)
 #plot3d(mydata$Dalc, mydata$Walc, mydata$absences, col=mydata$fit.cluster)
 
