@@ -34,7 +34,5 @@ vignettes/*.pdf
 .Rproj.user
 
 # Generated files
-bayes_plots/
-csv/
-grouping_plots/
-histograms/
+mat/
+por/
