@@ -47,8 +47,8 @@ for (subject in c("mat", "por")){
     selected_fatures <- na.omit(selected_fatures)
   
     # Wybór metod
-    for (dist_methode in c("manhattan")){
-        for(clust_method in c("ward.D2")){
+    for (dist_methode in c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski")){
+        for(clust_method in c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid")){
             
             print(paste("Grupowanie, clust: ", clust_method, ", dist: ", dist_methode, sep=""))
             
